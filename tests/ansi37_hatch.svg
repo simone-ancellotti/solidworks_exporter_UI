@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="20mm"
+   height="20mm"
+   viewBox="0 0 75.59055118110237 75.59055118110237"
+   version="1.1"
+   id="svg797606"
+   sodipodi:docname="ansi37_hatch.svg"
+   inkscape:version="1.2 (dc2aedaf03, 2022-05-15)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs797610" />
+  <sodipodi:namedview
+     id="namedview797608"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="1.964431"
+     inkscape:cx="-53.705118"
+     inkscape:cy="12.471805"
+     inkscape:window-width="1920"
+     inkscape:window-height="1001"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg797606" />
+  <line
+     x1="112.32119"
+     y1="27.29002"
+     x2="21.611189"
+     y2="118.00002"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797563-3" />
+  <line
+     x1="104.30119"
+     y1="19.27002"
+     x2="13.591188"
+     y2="109.98003"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797565-9" />
+  <line
+     x1="96.281189"
+     y1="11.26002"
+     x2="5.5811882"
+     y2="101.96002"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797567-2" />
+  <line
+     x1="88.271194"
+     y1="3.2400208"
+     x2="-2.4388113"
+     y2="93.950027"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797569-1" />
+  <line
+     x1="80.25119"
+     y1="-4.7799797"
+     x2="-10.458812"
+     y2="85.930023"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797571-6" />
+  <line
+     x1="72.231186"
+     y1="-12.79998"
+     x2="-18.478811"
+     y2="77.910019"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797573-9" />
+  <line
+     x1="64.211189"
+     y1="-20.809978"
+     x2="-26.48881"
+     y2="69.890022"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797575-1" />
+  <line
+     x1="56.201187"
+     y1="-28.829979"
+     x2="-34.508812"
+     y2="61.88002"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797577-4" />
+  <line
+     x1="48.181187"
+     y1="-36.849979"
+     x2="-42.528812"
+     y2="53.86002"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797579-9" />
+  <line
+     x1="-49.996052"
+     y1="30.090651"
+     x2="40.713947"
+     y2="120.80065"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797563" />
+  <line
+     x1="-41.976055"
+     y1="22.07065"
+     x2="48.733948"
+     y2="112.78065"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797565" />
+  <line
+     x1="-33.956051"
+     y1="14.06065"
+     x2="56.743946"
+     y2="104.76065"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797567" />
+  <line
+     x1="-25.946058"
+     y1="6.0406508"
+     x2="64.763947"
+     y2="96.750656"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797569" />
+  <line
+     x1="-17.926054"
+     y1="-1.9793497"
+     x2="72.783943"
+     y2="88.730652"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797571" />
+  <line
+     x1="-9.9060526"
+     y1="-9.9993505"
+     x2="80.803947"
+     y2="80.710648"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797573" />
+  <line
+     x1="-1.8860525"
+     y1="-18.009348"
+     x2="88.813942"
+     y2="72.690651"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797575" />
+  <line
+     x1="6.1239457"
+     y1="-26.029348"
+     x2="96.833946"
+     y2="64.680649"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797577" />
+  <line
+     x1="14.143947"
+     y1="-34.049351"
+     x2="104.85394"
+     y2="56.660648"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797579" />
+  <line
+     x1="22.163946"
+     y1="-42.069355"
+     x2="112.87395"
+     y2="48.640648"
+     stroke="#000000"
+     stroke-width="1"
+     id="line797581" />
+  <rect
+     style="fill:none;stroke-width:0.37795275;stop-color:#000000;stroke:#000000;stroke-opacity:1;stroke-dasharray:none"
+     id="rect799833"
+     width="75.53257"
+     height="75.564857"
+     x="0.047723733"
+     y="-7.0242492e-09" />
+</svg>

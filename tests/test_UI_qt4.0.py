@@ -8,20 +8,16 @@ import pandas as pd
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QVBoxLayout,
     QHBoxLayout, QFileDialog, QLineEdit, QTabWidget, QCheckBox, QProgressBar,
-    QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView,QAction,QFileDialog,
-    QStyledItemDelegate, QComboBox
+    QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView,QAction,QFileDialog
 )
 from PyQt5.QtCore import Qt, QTimer
 
-
-
-sys.path.append(os.path.join(os.path.dirname(__file__), './solidworks_functions'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../solidworks_functions'))
 from solidworks_export import (
     open_and_rebuild_drawing,
     export_drawing_to_pdf,
     export_drawing_to_dwg,
     export_part_or_assembly_configurations_to_step,
-    get_model_GetConfigurationNames,
 )
 
 from solidworks_porp_manager import (
@@ -107,9 +103,6 @@ class SolidWorksExportManager(QMainWindow):
         self.dwg_checkbox = QCheckBox("Export DWG")
         self.dwg_checkbox.setChecked(True)  # Default True
         
-        self.SLDWRK_close_expDRW_checkbox = QCheckBox("Close exported drws")
-        self.SLDWRK_close_expDRW_checkbox.setChecked(True)  
-        
         self.pdf_checkbox = QCheckBox("Export PDF")
         self.pdf_checkbox.setChecked(True)
         self.pdf_indiv_checkbox = QCheckBox("Export individual PDF sheets")
@@ -117,7 +110,7 @@ class SolidWorksExportManager(QMainWindow):
         layout.addLayout(self.make_check_buttons_layout([
             self.SLDWRK_visible_checkbox,self.pdf_checkbox, self.pdf_indiv_checkbox]))
         layout.addLayout(self.make_check_buttons_layout([
-            self.SLDWRK_close_expDRW_checkbox,self.dwg_checkbox, self.dwg_indiv_checkbox]))
+            self.SLDWRK_visible_checkbox,self.dwg_checkbox, self.dwg_indiv_checkbox]))
         # layout.addLayout(self.make_check_2buttons_layout(
         #     self.pdf_checkbox, self.pdf_indiv_checkbox
         #     ))
@@ -159,7 +152,7 @@ class SolidWorksExportManager(QMainWindow):
 
         # Drawing List
         btn_drawings = QPushButton("Retrive title blocks")
-        btn_drawings.clicked.connect(self.retrive_SLDDRW_properties)
+        btn_drawings.clicked.connect(self.upload_SLDDRW_properties)
         btn_updateSLWDRW = QPushButton("Sync. into SLWDRW")
         btn_updateSLWDRW.clicked.connect(self.update_into_SLDDRW_files)
         #layout.addWidget(btn_drawings)
@@ -201,15 +194,11 @@ class SolidWorksExportManager(QMainWindow):
         # Parts List
         btn_parts = QPushButton("Select Parts")
         btn_parts.clicked.connect(self.select_parts)
-        btn_parts_config = QPushButton("Extract Config.")
-        btn_parts_config.clicked.connect(self.extract_parts_config)
-        #layout.addWidget(btn_parts)
-        layout.addLayout(self.make_check_buttons_layout([
-            btn_parts ,btn_parts_config]))
+        layout.addWidget(btn_parts)
 
-        self.parts_table_HeaderLabels = ["File Name", "File Path","config"]
-        self.parts_table = QTableWidget(0, 3)
-        self.parts_table.setHorizontalHeaderLabels(self.parts_table_HeaderLabels)
+        
+        self.parts_table = QTableWidget(0, 2)
+        self.parts_table.setHorizontalHeaderLabels(["File Name", "File Path"])
         self.parts_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.parts_table)
 
@@ -269,86 +258,17 @@ class SolidWorksExportManager(QMainWindow):
             self.drawings_table.insertRow(self.drawings_table.rowCount())
             self.drawings_table.setItem(self.drawings_table.rowCount()-1, 0, QTableWidgetItem(filename))
             self.drawings_table.setItem(self.drawings_table.rowCount()-1, 1, QTableWidgetItem(file))
-            
         self.status.setText("Drawings selected")
-        
-        self.sync_drawings_table1_and_2()
-        
 
     def select_parts(self):
         files, _ = QFileDialog.getOpenFileNames(self, "Select Parts", "", "SolidWorks Files (*.SLDPRT *.SLDASM)" )
         for file in files:
             filename = os.path.basename(file)
             self.parts_table.insertRow(self.parts_table.rowCount())
-            i = self.parts_table_HeaderLabels.index("File Name")
-            self.parts_table.setItem(self.parts_table.rowCount()-1, i, QTableWidgetItem(filename))
-            i = self.parts_table_HeaderLabels.index("File Path")
-            self.parts_table.setItem(self.parts_table.rowCount()-1, i, QTableWidgetItem(file))
-            
-            
-        i = self.parts_table_HeaderLabels.index("config")
-        self.add_QComboBox_column(self.parts_table,i,configs = ["All"])
+            self.parts_table.setItem(self.parts_table.rowCount()-1, 0, QTableWidgetItem(filename))
+            self.parts_table.setItem(self.parts_table.rowCount()-1, 1, QTableWidgetItem(file))
         self.status.setText("Parts selected")
 
-    def add_QComboBox_column(self,qtTable, target_column,configs = ["All"]):
-        for row in range(qtTable.rowCount()):
-            self.add_QComboBox_cell(qtTable, target_column, row,configs)
-            
-    def add_QComboBox_cell(self,qtTable, target_column,target_row,configs = ["All"],value = None):
-        combo = QComboBox()
-        # Get list of configs for this row (maybe from your data)
-        combo.addItems(configs)
-        if value:
-            idx = combo.findText(value)
-            if idx >= 0:
-                combo.setCurrentIndex(idx)
-        qtTable.setCellWidget(target_row, target_column, combo)
-        return combo
-        
-    def extract_parts_config(self):
-        rows = self.parts_table.rowCount()
-        if rows == 0:
-            QMessageBox.warning(self, "Warning", "No parts selected for config. extractions.")
-            return
-        # Connect to SolidWorks
-        self.start_SLDWRK()
-        self.sw_app.Visible = self.SLDWRK_visible_checkbox.isChecked()
-        
-        count = rows
-        self.progress.setMaximum(count)
-        self.progress.setValue(0)
-        self.progress.setVisible(True)
-        self.status.setText(f"Extraction config...")
-        self.current_index = 0
-        self.total_items = count
-        data_table_parts = self.get_table_data(self.parts_table)
-        row = -1
-        for row_table in data_table_parts:
-            i = self.parts_table_HeaderLabels.index("File Name")
-            part_name = row_table[i]
-            i = self.parts_table_HeaderLabels.index("File Path")
-            part_path = row_table[i]
-            row +=1
-            configs = get_model_GetConfigurationNames(
-                sw_app = self.sw_app,
-                part_path = part_path,
-                )
-            configs_all = ("All",)+tuple(configs)
-            config_column = self.parts_table_HeaderLabels.index("config")
-            self.add_QComboBox_cell(self.parts_table, 
-                                    target_column = config_column,
-                                    target_row = row,
-                                    configs = configs_all )
-            print(f"Extracting config: {self.current_index}/{self.total_items}")
-            self.current_index += 1
-            self.progress.setValue(self.current_index-1)
-            
-        self.progress.setVisible(False)
-        self.status.setText("Extraction config completed")
-        QMessageBox.information(self, "Export Completed", "Extraction config process has finished.")
-        
-        return 
-    
     def export_drawings(self):
         rows = self.drawings_table.rowCount()
         if rows == 0:
@@ -423,7 +343,7 @@ class SolidWorksExportManager(QMainWindow):
             os.makedirs(export_folder_pdf, exist_ok=True)
             
             # Open and rebuild the drawing
-            drawing = open_and_rebuild_drawing(sw_app, drawing_path, flagForceRebuild = True)
+            drawing = open_and_rebuild_drawing(sw_app, drawing_path)
             if not drawing:
                 continue
             
@@ -441,8 +361,7 @@ class SolidWorksExportManager(QMainWindow):
                 self.current_index += 1
             self.progress.setValue(self.current_index)
             # Close the drawing
-            if self.SLDWRK_close_expDRW_checkbox.isChecked():
-                sw_app.CloseDoc(drawing.GetTitle)
+            sw_app.CloseDoc(drawing.GetTitle)
     
     def delete_selected_rows_of_table(self,table):
         selected = table.selectionModel().selectedRows()
@@ -483,25 +402,14 @@ class SolidWorksExportManager(QMainWindow):
         self.status.setText(f"Exporting {self.export_type}...")
         self.current_index = 0
         self.total_items = count
+        self.perform_export_step()
         data_table_parts = self.get_table_data(self.parts_table)
-        for row_table in data_table_parts:
-            i = self.parts_table_HeaderLabels.index("File Name")
-            part_name = row_table[i]
-            i = self.parts_table_HeaderLabels.index("File Path")
-            part_path = row_table[i]
-            i = self.parts_table_HeaderLabels.index("config")
-            part_config = row_table[i]
-            
-            if part_config == "All":
-                selected_configs = None
-            else:
-                selected_configs = [part_config]
-                
+        for part_name, part_path in data_table_parts:
             export_part_or_assembly_configurations_to_step(
                 sw_app = self.sw_app,
                 part_path = part_path,
                 export_folder = export_folder_parts,
-                selected_configs=selected_configs
+                selected_configs=None
                 )
             self.current_index += 1
             self.progress.setValue(self.current_index-1)
@@ -513,35 +421,34 @@ class SolidWorksExportManager(QMainWindow):
     
         
         
-    # def run_export_simulation(self, count, export_type):
-    #     self.progress.setMaximum(count)
-    #     self.progress.setValue(0)
-    #     self.progress.setVisible(True)
-    #     self.status.setText(f"Exporting {export_type}...")
+    def run_export_simulation(self, count, export_type):
+        self.progress.setMaximum(count)
+        self.progress.setValue(0)
+        self.progress.setVisible(True)
+        self.status.setText(f"Exporting {export_type}...")
 
-    #     self.current_index = 0
-    #     self.total_items = count
-    #     self.export_type = export_type
+        self.current_index = 0
+        self.total_items = count
+        self.export_type = export_type
 
-    #     self.timer = QTimer()
-    #     self.timer.timeout.connect(self.perform_export_step)
-    #     self.timer.start(500)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.perform_export_step)
+        self.timer.start(500)
 
-    # def perform_export_step(self):
-    #     self.current_index += 1
-    #     if self.current_index > self.total_items:
-    #         self.timer.stop()
-    #         self.progress.setVisible(False)
-    #         self.status.setText(f"{self.export_type.capitalize()} export completed")
-    #         QMessageBox.information(self, "Export Completed", f"{self.export_type.capitalize()} export process has finished.")
-    #     else:
-    #         self.progress.setValue(self.current_index)
-    #         #print(f"Exporting {self.export_type}: {self.current_index}/{self.total_items}")
+    def perform_export_step(self):
+        self.current_index += 1
+        if self.current_index > self.total_items:
+            self.timer.stop()
+            self.progress.setVisible(False)
+            self.status.setText(f"{self.export_type.capitalize()} export completed")
+            QMessageBox.information(self, "Export Completed", f"{self.export_type.capitalize()} export process has finished.")
+        else:
+            self.progress.setValue(self.current_index)
+            print(f"Exporting {self.export_type}: {self.current_index}/{self.total_items}")
             
     
     def start_SLDWRK(self):
         if not(self.sw_app):
-            self.status.setText("Starting SolidWorks...")
             self.sw_app = win32com.client.Dispatch('SldWorks.Application')
     
     def get_drawings_table1_data(self):
@@ -559,87 +466,17 @@ class SolidWorksExportManager(QMainWindow):
         for row in range(qtTable.rowCount()):
             row_data = []
             for col in range(qtTable.columnCount()):
-                combo = qtTable.cellWidget(row, col)  # Get the widget
-                if combo is not None and isinstance(combo, QComboBox):
-                    options = [combo.itemText(c) for c in range(combo.count())]
-                    value = {'value':combo.currentText(),'options':options}
-                else:
-                    item = qtTable.item(row, col)
-                    value = item.text()
-
-                row_data.append(value if item else "")
-                    
-            data.append(row_data)
-        return data
-    def get_TableWidget_horizontalHeaderItem(self,qtTable):
-        headers = []
-        for col in range(qtTable.columnCount()):
-            header_item = qtTable.horizontalHeaderItem(col)
-            if header_item is not None:
-                headers.append(header_item.text())
-        return headers
-    
-    def get_table_data_JSON(self,qtTable):
-        headers = self.get_TableWidget_horizontalHeaderItem(qtTable)
-        data = []
-        for row in range(qtTable.rowCount()):
-            row_data = {}
-            for col in range(qtTable.columnCount()):
-                header_text = headers[col]
-                combo = qtTable.cellWidget(row, col)  # Get the widget
-                if combo is not None and isinstance(combo, QComboBox):
-                    options = [combo.itemText(c) for c in range(combo.count())]
-                    value = combo.currentText()
-                    type_value = str(type(QComboBox))
-                else:
-                    item = qtTable.item(row, col)
-                    value = item.text()
-                    options = []
-                    type_value = type('')
-                row_data.update( { header_text : {'value':value,'options':options,'type':str(type_value) } })
+                item = qtTable.item(row, col)
+                row_data.append(item.text() if item else "")
             data.append(row_data)
         return data
     
-    def load_table_from_JSON_setting(self,settingsJSON,qtTable,field_name):
-        qtTable.setRowCount(0)
-        for row_data in settingsJSON.get(field_name, []):
-            row = qtTable.rowCount()
-            qtTable.insertRow(row)
-            for col, value in enumerate(row_data):
-                qtTable.setItem(row, col, QTableWidgetItem(value))
-                
-    def load_table_from_JSON_setting2(self,settingsJSON,qtTable,field_name):
-        headers = self.get_TableWidget_horizontalHeaderItem(qtTable)
-        qtTable.setRowCount(0)
-        for row_data in settingsJSON.get(field_name, []):
-            if isinstance(row_data,dict):
-                row = qtTable.rowCount()
-                qtTable.insertRow(row)
-                for header, cell_content in row_data.items():
-                    if header in headers:
-                        col = headers.index(header)
-                        value = cell_content.get('value','')
-                        
-                        type_value = cell_content.get('type','')
-                        
-                        if str(type(QComboBox)) == type_value:
-                            options = cell_content.get('options',[])
-                            self.add_QComboBox_cell(qtTable, col,row,configs = options,value = value)
-                        else:
-                            qtTable.setItem(row, col, QTableWidgetItem(value))
-    
-    def retrive_SLDDRW_properties(self):
-        rows = self.drawings_table.rowCount()
-        if rows == 0:
-            QMessageBox.warning(self, "Warning", "No drawings selected retriving properties.")
-            return
-        
+    def upload_SLDDRW_properties(self):
         self.slddrw_properties = {}
         slddrw_files = self.get_drawings_table1_data()
         #slddrw_files_path = [drw[1] for drw in slddrw_files ]
         #self.sw_app = win32com.client.Dispatch('SldWorks.Application')
-        if len(slddrw_files)>0:
-            self.start_SLDWRK()
+        self.start_SLDWRK()
         self.sw_app.Visible = self.SLDWRK_visible_checkbox.isChecked()
         
         progress_bar_length = self.drawings_table.rowCount()
@@ -707,25 +544,16 @@ class SolidWorksExportManager(QMainWindow):
                 
     def sync_drawings_table1_and_2(self):
         slddrw_files = self.get_drawings_table1_data()
-        
         slddrw_files_table1_set = {drw[0] for drw in slddrw_files }
         slddrw_propertiesJSON_set = set(self.slddrw_properties.keys())
         slddrw_files_deleted_set= slddrw_propertiesJSON_set - slddrw_files_table1_set
-        
-        slddrw_files_newAdded_set=  slddrw_files_table1_set - slddrw_propertiesJSON_set
         
         flag_some_row_deleted = False
         for drawing_name in list(slddrw_files_deleted_set):
                 del self.slddrw_properties[drawing_name]
                 flag_some_row_deleted = True
-        
-        flag_some_row_newAdded = False
-        for drawing_name in list(slddrw_files_newAdded_set):
-            flag_some_row_newAdded = True
-            self.slddrw_properties.update({drawing_name:{}})
-            
-            
-        if flag_some_row_deleted or flag_some_row_newAdded:
+                
+        if flag_some_row_deleted:
             self.update_SLDDRW_prop_table_from_Dict()
         return
     
@@ -766,22 +594,20 @@ class SolidWorksExportManager(QMainWindow):
         self.sync_drawings_prop_table_to_dict()
         self.sync_drawings_table1_and_2()
 
-
-
+    
     def save_settings(self):
         settings = {
             "dwg_folder": self.dwg_folder_edit.text(),
             "pdf_folder": self.pdf_folder_edit.text(),
             "step_folder": self.step_folder_edit.text(),
             "flag_SLDWRK_visible" : self.SLDWRK_visible_checkbox.isChecked(),
-            "flag_SLDWRK__close_expDRW" : self.SLDWRK_close_expDRW_checkbox.isChecked(),
             "export_dwg": self.dwg_checkbox.isChecked(),
             "export_pdf": self.pdf_checkbox.isChecked(),
             "flag_indiv_dwg": self.dwg_indiv_checkbox.isChecked(),
             "flag_indiv_pdf": self.pdf_indiv_checkbox.isChecked(),
             "drawings": self.get_drawings_table1_data(),
             "drawings_properties": self.slddrw_properties,
-            "parts": self.get_table_data_JSON(self.parts_table),
+            "parts": self.get_table_data(self.parts_table),
         }
         file_path, _ = QFileDialog.getSaveFileName(
             self,                             # parent widget (can be None if not in a class)
@@ -807,7 +633,6 @@ class SolidWorksExportManager(QMainWindow):
                 self.pdf_folder_edit.setText(settings.get("pdf_folder", ""))
                 self.step_folder_edit.setText(settings.get("step_folder", ""))
                 self.SLDWRK_visible_checkbox.setChecked(settings.get("flag_SLDWRK_visible" , False)) 
-                self.SLDWRK_close_expDRW_checkbox.setChecked(settings.get("flag_SLDWRK__close_expDRW" , True)) 
                 self.dwg_checkbox.setChecked(settings.get("flag_indiv_dwg", False))
                 self.dwg_checkbox.setChecked(settings.get("flag_indiv_pdf", False))
                 # self.drawings_table.setRowCount(0)
@@ -821,49 +646,30 @@ class SolidWorksExportManager(QMainWindow):
                 self.update_SLDDRW_prop_table_from_Dict()
                 self.sync_drawings_table1_and_2()
                 
-                self.load_table_from_JSON_setting2(settings,self.parts_table,"parts")
-                
-                # i = self.parts_table_HeaderLabels.index("config")
-                # self.add_QComboBox_column(self.parts_table,i,configs = ["All"])
+                self.load_table_from_JSON_setting(settings,self.parts_table,"parts")
 
                 
-
+    def load_table_from_JSON_setting(self,settingsJSON,qtTable,field_name):
+        qtTable.setRowCount(0)
+        for row_data in settingsJSON.get(field_name, []):
+            row = qtTable.rowCount()
+            qtTable.insertRow(row)
+            for col, value in enumerate(row_data):
+                qtTable.setItem(row, col, QTableWidgetItem(value))
         
     def on_cell_changed_drawings_prop_table(self):
         #print('tony')
         #self.sync_drawings_prop_table_to_dict()
         return                    
-    
     def update_into_SLDDRW_files(self):
         self.sync_drawings_prop_table_to_dict()
-        rows = self.drawings_prop_table.rowCount()
-        if rows == 0:
-            QMessageBox.warning(self, "Warning", "No drawings selected for sync. properties.")
-            return
         #print(self.slddrw_properties)
+        self.start_SLDWRK()
         slddrw_files = self.get_drawings_table1_data()
-        if len(slddrw_files)>0:
-            self.start_SLDWRK()
-            self.status.setText("Preparing sync. properties...")
-            
-        progress_bar_length = self.drawings_table.rowCount()
-        self.progress.setMaximum(progress_bar_length)
-        self.progress.setValue(0)
-        self.progress.setVisible(True)
-        self.status.setText("Sync. properties from table to drawings...")
-        self.current_index = 0
         for drawing_name, drawing_path in slddrw_files:
             props = self.slddrw_properties[drawing_name]
             update_drawing_property( self.sw_app, drawing_path, props ,flagRebuild = False)
 
-            self.current_index +=1
-            self.progress.setValue(self.current_index)
-            self.status.setText(f"Properties drawing {drawing_name} retriving completed")
-            
-        self.progress.setVisible(False)
-        self.status.setText("Sync. properties drawings completed")
-        QMessageBox.information(self, "Sync. properties drawings completed", "Sync. properties drawings completed process has finished.")
-        
         return 0
     
     
