@@ -40,6 +40,27 @@ def open_and_rebuild_drawing(sw_app, drawing_path,flagForceRebuild = True):
     except Exception as e:
         print(f"An error occurred while opening and rebuilding the drawing: {e}")
         return None
+    
+def open_and_rebuild_SLDWRKS_file(sw_app, file_path,flagForceRebuild = True):
+    try:
+        type_of_file = 0 
+        if file_path.upper().endswith('.SLDDRW'):
+            type_of_file= 3
+        else:
+            if file_path.upper().endswith('.SLDPRT'):
+                type_of_file =  1
+            else: 
+                type_of_file = 2
+        # Open the drawing file
+        drawing = sw_app.OpenDoc6(file_path, type_of_file, 0, "", errors, warnings)  # 3 indicates drawing document type
+
+        # Rebuild/Refresh the drawing
+        drawing.ForceRebuild3(flagForceRebuild)
+
+        return drawing
+    except Exception as e:
+        print(f"An error occurred while opening and rebuilding the file: {e}")
+        return None
 
 # SolidWorks Interaction - Export to PDF
 def export_drawing_to_pdf(sw_app,drawing, pdf_export_path, export_individual_sheets=False):

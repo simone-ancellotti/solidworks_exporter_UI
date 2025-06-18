@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QVBoxLayout,
     QHBoxLayout, QFileDialog, QLineEdit, QTabWidget, QCheckBox, QProgressBar,
     QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView,QAction,QFileDialog,
-    QStyledItemDelegate, QComboBox
+    QStyledItemDelegate, QComboBox,
 )
 from PyQt5.QtCore import Qt, QTimer
 
@@ -22,6 +22,7 @@ from solidworks_export import (
     export_drawing_to_dwg,
     export_part_or_assembly_configurations_to_step,
     get_model_GetConfigurationNames,
+    open_and_rebuild_SLDWRKS_file,
 )
 
 from solidworks_porp_manager import (
@@ -143,11 +144,16 @@ class SolidWorksExportManager(QMainWindow):
         btn_delete.clicked.connect(self.delete_selected_drawings)
         #layout.addWidget(btn_delete, alignment=Qt.AlignLeft)
         
+        btn_open_drw = QPushButton("Open Selected")
+        btn_open_drw.setFixedWidth(150)
+        btn_open_drw.clicked.connect(self.open_selected_drawings)
+        
+        
         btn_export = QPushButton("Export Drawings")
         btn_export.setFixedWidth(150)
         btn_export.clicked.connect(self.export_drawings)
         #layout.addWidget(btn_export)
-        layout.addLayout(self.make_folder_layout(btn_delete, btn_export))
+        layout.addLayout(self.make_check_buttons_layout([btn_delete,btn_open_drw, btn_export]))
 
         tab.setLayout(layout)
         self.tabs.addTab(tab, "Drawing Export")
@@ -461,8 +467,29 @@ class SolidWorksExportManager(QMainWindow):
     def delete_selected_parts(self):
         self.delete_selected_rows_of_table(self.parts_table)
         self.status.setText("Selected parts deleted")
-     
-
+    
+    def open_selected_rows(self,qtTable):
+        selected = qtTable.selectionModel().selectedRows()
+        headers = self.get_TableWidget_horizontalHeaderItem(qtTable)
+        col = headers.index("File Path")
+        col_name = headers.index("File Name")
+        if col>=0:
+            self.start_SLDWRK()
+            self.sw_app.Visible = self.SLDWRK_visible_checkbox.isChecked()
+            for index in sorted(selected, reverse=True):
+                row = index.row()
+                item = qtTable.item(row, col)
+                file_path = item.text()
+                file_name = qtTable.item(row, col_name).text()
+                self.status.setText(f"Opening {file_name}...")
+                open_and_rebuild_SLDWRKS_file(self.sw_app, file_path,flagForceRebuild = False)
+            self.status.setText("Opening completed...")
+        return
+    
+    def open_selected_drawings(self):
+        self.open_selected_rows(self.drawings_table)
+        return 
+    
     def export_parts(self):
         rows = self.parts_table.rowCount()
         if rows == 0:
@@ -511,33 +538,6 @@ class SolidWorksExportManager(QMainWindow):
         QMessageBox.information(self, "Export Completed", f"{self.export_type.capitalize()} export process has finished.")
     
     
-        
-        
-    # def run_export_simulation(self, count, export_type):
-    #     self.progress.setMaximum(count)
-    #     self.progress.setValue(0)
-    #     self.progress.setVisible(True)
-    #     self.status.setText(f"Exporting {export_type}...")
-
-    #     self.current_index = 0
-    #     self.total_items = count
-    #     self.export_type = export_type
-
-    #     self.timer = QTimer()
-    #     self.timer.timeout.connect(self.perform_export_step)
-    #     self.timer.start(500)
-
-    # def perform_export_step(self):
-    #     self.current_index += 1
-    #     if self.current_index > self.total_items:
-    #         self.timer.stop()
-    #         self.progress.setVisible(False)
-    #         self.status.setText(f"{self.export_type.capitalize()} export completed")
-    #         QMessageBox.information(self, "Export Completed", f"{self.export_type.capitalize()} export process has finished.")
-    #     else:
-    #         self.progress.setValue(self.current_index)
-    #         #print(f"Exporting {self.export_type}: {self.current_index}/{self.total_items}")
-            
     
     def start_SLDWRK(self):
         if not(self.sw_app):
@@ -812,12 +812,6 @@ class SolidWorksExportManager(QMainWindow):
                 self.SLDWRK_close_expDRW_checkbox.setChecked(settings.get("flag_SLDWRK__close_expDRW" , True)) 
                 self.dwg_indiv_checkbox.setChecked(settings.get("flag_indiv_dwg", False))
                 self.pdf_indiv_checkbox.setChecked(settings.get("flag_indiv_pdf", False))
-                # self.drawings_table.setRowCount(0)
-                # for row_data in settings.get("drawings", []):
-                #     row = self.drawings_table.rowCount()
-                #     self.drawings_table.insertRow(row)
-                #     for col, value in enumerate(row_data):
-                #         self.drawings_table.setItem(row, col, QTableWidgetItem(value))
                 self.load_table_from_JSON_setting(settings,self.drawings_table,"drawings")
                 self.slddrw_properties = settings.get("drawings_properties",{})
                 self.update_SLDDRW_prop_table_from_Dict()
