@@ -666,13 +666,7 @@ class SolidWorksExportManager(QMainWindow):
         QMessageBox.information(self, "Properties retriving Completed", "Properties drawings retriving process has finished.")
         
         
-    def update_SLDDRW_prop_table_from_Dict(self):
-        # for filename, props in self.slddrw_properties.items():
-            
-        #     print(f"\nProperties for {filename}:")
-        #     for k, v in props.items():
-        #         print(f"  {k}: {v['value']}")
-        
+    def update_SLDDRW_prop_table_from_Dict(self):        
         columns = properties_columns_all
         self.drawings_prop_table.setRowCount(len(self.slddrw_properties))
         for row, (filename, props) in enumerate(self.slddrw_properties.items()):
