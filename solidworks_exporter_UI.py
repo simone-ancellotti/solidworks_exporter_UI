@@ -501,7 +501,7 @@ class SolidWorksExportManager(QMainWindow):
         self.sw_app.Visible = self.SLDWRK_visible_checkbox.isChecked()
         
         
-        self.export_type = "drawings"
+        self.export_type = "parts"
         export_folder_parts = self.step_folder_edit.text()
         count = rows
         self.progress.setMaximum(count)
@@ -519,10 +519,10 @@ class SolidWorksExportManager(QMainWindow):
             i = self.parts_table_HeaderLabels.index("config")
             part_config = row_table[i]
             
-            if part_config == "All":
+            if part_config['value'] == "All":
                 selected_configs = None
             else:
-                selected_configs = [part_config]
+                selected_configs = [part_config['value']]
                 
             export_part_or_assembly_configurations_to_step(
                 sw_app = self.sw_app,
@@ -745,6 +745,7 @@ class SolidWorksExportManager(QMainWindow):
             return
         df = pd.read_excel(file_path)
         df = df.fillna("")  # Replace NaN with empty string
+        #df.to_excel('G:/My Drive/ULIX tecnico/CAD_Backup/Job-5_pistola_CAD/drawing/test.xlsx', index=False)
         # Clear existing table
         self.drawings_prop_table.setRowCount(0)
         # Optionally reset columns if headers change

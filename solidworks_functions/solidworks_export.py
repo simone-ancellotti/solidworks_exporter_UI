@@ -75,7 +75,9 @@ def export_drawing_to_pdf(sw_app,drawing, pdf_export_path, export_individual_she
                 
                 pdf_export_dir = os.path.dirname(pdf_export_path)
                 # Define export path
-                sheet_pdf_export_path = os.path.join(pdf_export_dir, f"{file_name}_sheet{index}.pdf")
+                #name_out_file = f"{file_name}_sheet{index}.pdf"
+                name_out_file = f"{file_name}_{sheet_name}.pdf"
+                sheet_pdf_export_path = os.path.join(pdf_export_dir, name_out_file )
 
                 # Save individual sheet as PDF
                 export_pdf_data = sw_app.GetExportFileData(1)  # 1 indicates PDF
@@ -117,7 +119,9 @@ def export_drawing_to_dwg(sw_app,drawing, dwg_export_path, export_individual_she
                 
                 
                 # Define export path
-                sheet_dwg_export_path = os.path.join(dwg_export_dir, f"{file_name}_sheet{index}.dwg")
+                # name_out_file = f"{file_name}_sheet{index}.dwg"
+                name_out_file = f"{file_name}_{sheet_name}.dwg"
+                sheet_dwg_export_path = os.path.join(dwg_export_dir, name_out_file )
                # new_path = os.path.join(os.path.dirname(old_path), new_filename)
                 
                 # Save individual sheet as DWG using SaveAs3
@@ -166,16 +170,20 @@ def rename_dwg_files(dwg_folder, file_name):
 def export_part_or_assembly_configurations_to_step(sw_app, part_path, export_folder, selected_configs=None):
     try:
         # Open the part or assembly file
-        model = sw_app.OpenDoc6(part_path, 1 if part_path.endswith('.SLDPRT') else 2, 0, "", errors, warnings)  # 1 for part, 2 for assembly
+        model = sw_app.OpenDoc6(part_path, 1 if part_path.upper().endswith('.SLDPRT') else 2, 0, "", errors, warnings)  # 1 for part, 2 for assembly
 
         # Get the configuration names
         configs = model.GetConfigurationNames
+        
+        found_config_flag = False
         for config_name in configs:
             # If selected_configs is provided, only export those configurations
             if selected_configs and config_name not in selected_configs:
+                
                 continue
             # Activate each configuration
             model.ShowConfiguration2(config_name)
+            found_config_flag = True
             
             config_name_epurated = config_name.replace('<','_')
             config_name_epurated = config_name_epurated.replace('>','')
@@ -189,7 +197,10 @@ def export_part_or_assembly_configurations_to_step(sw_app, part_path, export_fol
                 print(f"Failed to save configuration '{config_name}' as STEP: {part_path}")
             else:
                 print(f"Exported configuration '{config_name}' as STEP: {step_export_path}")
-
+        
+        if not(found_config_flag):
+            print('Error: Selected Configuartion not found')
+            
         # Close the part or assembly
         sw_app.CloseDoc(model.GetTitle)
     except Exception as e:
@@ -197,7 +208,7 @@ def export_part_or_assembly_configurations_to_step(sw_app, part_path, export_fol
 
 def get_model_GetConfigurationNames(sw_app, part_path):
     try: 
-        model = sw_app.OpenDoc6(part_path, 1 if part_path.endswith('.SLDPRT') else 2, 0, "", errors, warnings)  # 1 for part, 2 for assembly
+        model = sw_app.OpenDoc6(part_path, 1 if part_path.upper().endswith('.SLDPRT') else 2, 0, "", errors, warnings)  # 1 for part, 2 for assembly
         # Get the configuration names
         configs = model.GetConfigurationNames
         # Close the part or assembly
