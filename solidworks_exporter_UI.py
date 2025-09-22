@@ -523,7 +523,9 @@ class SolidWorksExportManager(QMainWindow):
                 selected_configs = None
             else:
                 selected_configs = [part_config['value']]
-                
+            
+            os.makedirs(export_folder_parts, exist_ok=True)
+            
             export_part_or_assembly_configurations_to_step(
                 sw_app = self.sw_app,
                 part_path = part_path,
