@@ -100,7 +100,7 @@ def export_drawing_to_pdf(sw_app,drawing, pdf_export_path, export_individual_she
         print(f"An error occurred: {e}")
 
 # SolidWorks Interaction - Export to DWG
-def export_drawing_to_dwg(sw_app,drawing, dwg_export_path, export_individual_sheets=False):
+def export_drawing_to_dwg(sw_app,drawing, dwg_export_path, export_individual_sheets=False,flag_exp_dxf = False):
     try:
         # Get sheet names if exporting individual sheets
         sheet_names = list(drawing.GetSheetNames)
@@ -120,27 +120,47 @@ def export_drawing_to_dwg(sw_app,drawing, dwg_export_path, export_individual_she
                 
                 # Define export path
                 # name_out_file = f"{file_name}_sheet{index}.dwg"
-                name_out_file = f"{file_name}_{sheet_name}.dwg"
-                sheet_dwg_export_path = os.path.join(dwg_export_dir, name_out_file )
-               # new_path = os.path.join(os.path.dirname(old_path), new_filename)
+                name_out_file_dwg = f"{file_name}_{sheet_name}.dwg"
+                name_out_file_dxf = f"{file_name}_{sheet_name}.dxf"
+                sheet_dwg_export_path = os.path.join(dwg_export_dir, name_out_file_dwg )
                 
+               # new_path = os.path.join(os.path.dirname(old_path), new_filename)
                 # Save individual sheet as DWG using SaveAs3
                 success_dwg = drawing.SaveAs3(sheet_dwg_export_path, 0, 1)  # 2 = Save only the active sheet
                 if success_dwg != 0 or not(os.path.isfile(sheet_dwg_export_path)):
                     print(f"Failed to save sheet {sheet_name} as DWG.")
                 else:
                     print(f"Exported sheet {sheet_name} as DWG: {sheet_dwg_export_path}")
+                
+                if flag_exp_dxf:
+                    sheet_dxf_export_path = os.path.join(dwg_export_dir, name_out_file_dxf )
+                    success_dxf = drawing.SaveAs3(sheet_dxf_export_path, 0, 1)  
+                    if success_dxf != 0 or not(os.path.isfile(sheet_dxf_export_path)):
+                        print(f"Failed to save sheet {sheet_name} as DXF.")
+                    else:
+                        print(f"Exported sheet {sheet_name} as DXF: {sheet_dxf_export_path}")
         else:
             # Save as DWG (including all sheets if present)
             boolstatus = sw_app.SetUserPreferenceIntegerValue(
                 swUserPreferenceIntegerValue_e['swDxfMultiSheetOption'],
                 swDxfMultisheet_e['swDxfMultiSheet']
                 )
+            
             success_dwg = drawing.SaveAs3(dwg_export_path, 0, 1)
+            
+            
             if success_dwg != 0:
                 print("Failed to save the drawing as DWG.")
             else:
                 print(f"Exported DWG: {dwg_export_path}")
+            
+            if flag_exp_dxf:
+                name_out_file_dxf = f"{file_name}.dxf"
+                success_dxf = drawing.SaveAs3(name_out_file_dxf, 0, 1)
+                if success_dwg != 0:
+                    print("Failed to save the drawing as DXF.")
+                else:
+                    print(f"Exported DXF: {dwg_export_path}")
 
     except Exception as e:
         print(f"An error occurred: {e}")

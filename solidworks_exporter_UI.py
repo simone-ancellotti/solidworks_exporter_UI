@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QVBoxLayout,
     QHBoxLayout, QFileDialog, QLineEdit, QTabWidget, QCheckBox, QProgressBar,
     QTableWidget, QTableWidgetItem, QMessageBox, QHeaderView,QAction,QFileDialog,
-    QStyledItemDelegate, QComboBox,
+    QStyledItemDelegate, QComboBox, QGridLayout,
 )
 from PyQt5.QtCore import Qt, QTimer
 
@@ -108,6 +108,9 @@ class SolidWorksExportManager(QMainWindow):
         self.dwg_checkbox = QCheckBox("Export DWG")
         self.dwg_checkbox.setChecked(True)  # Default True
         
+        self.dxf_checkbox = QCheckBox("Export DXF")
+        self.dxf_checkbox.setChecked(False)  # Default True
+        
         self.SLDWRK_close_expDRW_checkbox = QCheckBox("Close exported drws")
         self.SLDWRK_close_expDRW_checkbox.setChecked(True)  
         
@@ -115,18 +118,27 @@ class SolidWorksExportManager(QMainWindow):
         self.pdf_checkbox.setChecked(True)
         self.pdf_indiv_checkbox = QCheckBox("Export individual PDF sheets")
         self.dwg_indiv_checkbox = QCheckBox("Export individual DWG sheets")
-        layout.addLayout(self.make_check_buttons_layout([
-            self.SLDWRK_visible_checkbox,self.pdf_checkbox, self.pdf_indiv_checkbox]))
-        layout.addLayout(self.make_check_buttons_layout([
-            self.SLDWRK_close_expDRW_checkbox,self.dwg_checkbox, self.dwg_indiv_checkbox]))
-        # layout.addLayout(self.make_check_2buttons_layout(
-        #     self.pdf_checkbox, self.pdf_indiv_checkbox
-        #     ))
-        # layout.addLayout(self.make_check_2buttons_layout(
-        #     self.dwg_checkbox, self.dwg_indiv_checkbox
-        #     ))
-        # layout.addLayout(self.make_check_buttons_layout([pdf_checkbox, pdf_indiv_checkbox,dwg_checkbox, dwg_indiv_checkbox]))
+        # layout.addLayout(self.make_check_buttons_layout([
+        #     self.SLDWRK_visible_checkbox,self.pdf_checkbox, self.pdf_indiv_checkbox]))
+        # layout.addLayout(self.make_check_buttons_layout([
+        #     self.SLDWRK_close_expDRW_checkbox,self.dwg_checkbox, self.dwg_indiv_checkbox,
+        #     self.dxf_checkbox,
+        #     ]))
+        
+        grid = QGridLayout()
 
+        # Row 0
+        grid.addWidget(self.SLDWRK_visible_checkbox,       0, 0)
+        grid.addWidget(self.pdf_checkbox,                  0, 1)
+        grid.addWidget(self.pdf_indiv_checkbox,            0, 2)
+        
+        # Row 1
+        grid.addWidget(self.SLDWRK_close_expDRW_checkbox,  1, 0)
+        grid.addWidget(self.dwg_checkbox,                  1, 1)
+        grid.addWidget(self.dwg_indiv_checkbox,            1, 2)
+        grid.addWidget(self.dxf_checkbox,                  1, 3)
+        
+        layout.addLayout(grid)
 
 
         # Drawing List
@@ -374,6 +386,7 @@ class SolidWorksExportManager(QMainWindow):
         flag_export_individual_sheets_dwg = self.dwg_indiv_checkbox.isChecked()
         flag_export_individual_sheets_pdf = self.pdf_indiv_checkbox.isChecked()
         flag_export_dwg_ = self.dwg_checkbox.isChecked()
+        flag_export_dxf_ = self.dxf_checkbox.isChecked()
         flag_export_pdf_ = self.pdf_checkbox.isChecked()
         drawings = self.get_drawings_table1_data()
         
@@ -402,8 +415,9 @@ class SolidWorksExportManager(QMainWindow):
         print("")
         
         self.export_DRW_Solidworks(self.sw_app,drawings_path_list2,export_folder_dwg,export_folder_pdf,
-                              flag_export_dwg_, flag_export_pdf_,
-                              flag_export_individual_sheets_pdf,flag_export_individual_sheets_dwg)
+                              flag_export_dwg_, flag_export_pdf_,flag_export_dxf_,
+                              flag_export_individual_sheets_pdf,
+                              flag_export_individual_sheets_dwg)
         
         self.progress.setVisible(False)
         self.status.setText(f"{self.export_type.capitalize()} export completed")
@@ -414,7 +428,7 @@ class SolidWorksExportManager(QMainWindow):
             
 
     def export_DRW_Solidworks(self,sw_app,drawings_list,export_folder_dwg,export_folder_pdf,
-                              flag_export_dwg, flag_export_pdf,
+                              flag_export_dwg, flag_export_pdf,flag_export_dxf,
                               export_individual_sheets_pdf,export_individual_sheets_dwg):
 
         
@@ -443,7 +457,10 @@ class SolidWorksExportManager(QMainWindow):
                 export_drawing_to_pdf(sw_app, drawing, pdf_export_path, export_individual_sheets=export_individual_sheets_pdf)
                 self.current_index += 1
             if flag_export_dwg:
-                export_drawing_to_dwg(sw_app, drawing, dwg_export_path, export_individual_sheets=export_individual_sheets_dwg)
+                export_drawing_to_dwg(sw_app, drawing, dwg_export_path,
+                                      export_individual_sheets=export_individual_sheets_dwg,
+                                      flag_exp_dxf=flag_export_dxf,
+                                      )
                 self.current_index += 1
             self.progress.setValue(self.current_index)
             # Close the drawing
@@ -773,6 +790,7 @@ class SolidWorksExportManager(QMainWindow):
             "flag_SLDWRK_visible" : self.SLDWRK_visible_checkbox.isChecked(),
             "flag_SLDWRK__close_expDRW" : self.SLDWRK_close_expDRW_checkbox.isChecked(),
             "export_dwg": self.dwg_checkbox.isChecked(),
+            "export_dxf": self.dxf_checkbox.isChecked(),
             "export_pdf": self.pdf_checkbox.isChecked(),
             "flag_indiv_dwg": self.dwg_indiv_checkbox.isChecked(),
             "flag_indiv_pdf": self.pdf_indiv_checkbox.isChecked(),
@@ -804,6 +822,7 @@ class SolidWorksExportManager(QMainWindow):
                 self.pdf_folder_edit.setText(settings.get("pdf_folder", ""))
                 self.step_folder_edit.setText(settings.get("step_folder", ""))
                 self.dwg_checkbox.setChecked(settings.get("export_dwg" , False))
+                self.dxf_checkbox.setChecked(settings.get("export_dxf" , False))
                 self.pdf_checkbox.setChecked(settings.get("export_pdf" , False)) 
                 self.SLDWRK_visible_checkbox.setChecked(settings.get("flag_SLDWRK_visible" , False)) 
                 self.SLDWRK_close_expDRW_checkbox.setChecked(settings.get("flag_SLDWRK__close_expDRW" , True)) 
